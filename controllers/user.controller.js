@@ -3,6 +3,7 @@ const User = require("../model/userModel");
 const bcrypt = require("bcryptjs");
 
 const jwt = require("jsonwebtoken");
+const { getDistance } = require("../utils/getDistance");
 
 //===================== Register / Login User ======
 
@@ -177,6 +178,7 @@ exports.register = async (req, res) => {
   }
 };
 
+
 // =========== cahnge user status(active to inactive voicevarsa) token required in the headers ===
 
 exports.statusUpdate = async (req, res) => {
@@ -203,6 +205,76 @@ exports.statusUpdate = async (req, res) => {
     res
       .status(200)
       .json({ status_code: "200", message: "Status Updated successfully" });
+  } catch (err) {
+    return res.status(500).json({ status: false, message: err.message });
+  }
+};
+
+
+// ========= get Distance get Api destination lat & long in query params =======
+
+exports.getDistanceKm = async (req, res) => {
+  try {
+    const { destinationLat, destinationLong } = req.query;
+
+    // validation latitude
+
+    if (!destinationLat) {
+      return res
+        .status(400)
+        .json({
+          status: false,
+          message: "Please Provide Destination_Latitude",
+        });
+    }
+
+    const distLat = Number(destinationLat);
+
+    if (isNaN(distLat)) {
+      return res
+        .status(400)
+        .json({
+          status: false,
+          message: "Please Provide valid Destination_Latitude",
+        });
+    }
+
+    // validation longitude
+
+    if (!destinationLong) {
+      return res
+        .status(400)
+        .json({
+          status: false,
+          message: "Please Provide  Destination_Longitude",
+        });
+    }
+
+    const distLong = Number(destinationLong);
+
+    if (isNaN(distLong)) {
+      return res
+        .status(400)
+        .json({
+          status: false,
+          message: "Please Provide valid Destination_Longitude",
+        });
+    }
+
+    const { latitude, longitude } = req.user;
+
+    const distance = getDistance(latitude, longitude, distLat, distLong);
+
+    // console.log("distance", distance);
+
+    return res
+      .status(200)
+      .json({
+        status_code: "200",
+        message: "Distance calculated sucessfully",
+        distance: `${distance.toFixed(3)}km`,
+      });
+
   } catch (err) {
     return res.status(500).json({ status: false, message: err.message });
   }
