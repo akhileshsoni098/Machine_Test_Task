@@ -1,17 +1,20 @@
+const express = require("express");
+const { connectDb } = require("./config/db");
 
+const app = express();
 
-const express = require("express")
-const { connectDb } = require("./config/db")
+app.use(express.json());
 
-const app = express()
+connectDb();
 
-app.use(express.json())
+app.get("/", async (req, res) => {
+  return res
+    .status(200)
+    .json({ status: true, message: "App is working awesome" });
+});
 
+const userRoute = require("./routes/user.route");
 
-app.get("/", async (req, res)=>{
-    return res.status(200).json({status:true , message:"App is working awesome"})
-})
+app.use("/user", userRoute);
 
-connectDb()
-
-module.exports = app
+module.exports = app;
