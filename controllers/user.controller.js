@@ -81,9 +81,11 @@ exports.register = async (req, res) => {
         register_at: checkUser.createdAt,
         token: token,
       };
-      return res
-        .status(200)
-        .json({ message: "User LogIn Successfully", data: response });
+      return res.status(200).json({
+        status_code: "200",
+        message: "User LogIn Successfully",
+        data: response,
+      });
     }
 
     // password hashing
@@ -165,22 +167,43 @@ exports.register = async (req, res) => {
       token: token,
     };
 
-    return res
-      .status(200)
-      .json({ message: "User LogIn Successfully", data: response });
+    return res.status(200).json({
+      status_code: "200",
+      message: "User LogIn Successfully",
+      data: response,
+    });
   } catch (err) {
     return res.status(500).json({ status: false, message: err.message });
   }
 };
 
-
 // =========== cahnge user status(active to inactive voicevarsa) token required in the headers ===
 
-exports.statusUpdate = async (req, res)=>{
-  try{
+exports.statusUpdate = async (req, res) => {
+  try {
+    // condition
+    // status === "active" ? "inactive" : "active"
 
-    
-  }catch(err){
-    return res.status(500).json({status:false , message:err.message})
+    const statusUpdate = await User.updateMany(
+      {},
+      [
+        {
+          $set: {
+            status: {
+              $cond: [{ $eq: ["$status", "active"] }, "inactive", "active"],
+            },
+          },
+        },
+      ],
+      { updatePipeline: true },
+    );
+
+    // console.log("statusUpdate", statusUpdate);
+
+    res
+      .status(200)
+      .json({ status_code: "200", message: "Status Updated successfully" });
+  } catch (err) {
+    return res.status(500).json({ status: false, message: err.message });
   }
-}
+};
