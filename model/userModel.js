@@ -44,6 +44,10 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// indexing to get quick doc scan for user listing
+
+userSchema.index({ createdAt: 1 });
+
 const User = mongoose.model("User", userSchema);
 
 module.exports = User;

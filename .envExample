@@ -1,0 +1,6 @@
+PORT=3001
+
+MONGO_URI=mongodb+srv://Akhilesh....
+
+JWT_SECRET=your jwt seceret
+

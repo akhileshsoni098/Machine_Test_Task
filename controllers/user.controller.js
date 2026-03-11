@@ -121,6 +121,13 @@ exports.register = async (req, res) => {
       });
     }
 
+    if (lat < -90 || lat > 90) {
+      return res.status(400).json({
+        status: false,
+        message: "latitude should be between -90 and 90",
+      });
+    }
+
     // longitude validation
 
     if (!longitude) {
@@ -135,6 +142,13 @@ exports.register = async (req, res) => {
       return res.status(400).json({
         status: false,
         message: "Please provide a valid longitude",
+      });
+    }
+
+    if (long < -180 || long > 180) {
+      return res.status(400).json({
+        status: false,
+        message: "Longitude should be between -180 and 180",
       });
     }
 
@@ -178,7 +192,6 @@ exports.register = async (req, res) => {
   }
 };
 
-
 // =========== cahnge user status(active to inactive voicevarsa) token required in the headers ===
 
 exports.statusUpdate = async (req, res) => {
@@ -210,7 +223,6 @@ exports.statusUpdate = async (req, res) => {
   }
 };
 
-
 // ========= get Distance get Api destination lat & long in query params =======
 
 exports.getDistanceKm = async (req, res) => {
@@ -220,45 +232,51 @@ exports.getDistanceKm = async (req, res) => {
     // validation latitude
 
     if (!destinationLat) {
-      return res
-        .status(400)
-        .json({
-          status: false,
-          message: "Please Provide Destination_Latitude",
-        });
+      return res.status(400).json({
+        status: false,
+        message: "Please Provide Destination_Latitude",
+      });
     }
 
     const distLat = Number(destinationLat);
 
     if (isNaN(distLat)) {
-      return res
-        .status(400)
-        .json({
-          status: false,
-          message: "Please Provide valid Destination_Latitude",
-        });
+      return res.status(400).json({
+        status: false,
+        message: "Please Provide valid Destination_Latitude",
+      });
+    }
+
+    if (distLat < -90 || distLat > 90) {
+      return res.status(400).json({
+        status: false,
+        message: "latitude should be between -90 and 90",
+      });
     }
 
     // validation longitude
 
     if (!destinationLong) {
-      return res
-        .status(400)
-        .json({
-          status: false,
-          message: "Please Provide  Destination_Longitude",
-        });
+      return res.status(400).json({
+        status: false,
+        message: "Please Provide  Destination_Longitude",
+      });
     }
 
     const distLong = Number(destinationLong);
 
     if (isNaN(distLong)) {
-      return res
-        .status(400)
-        .json({
-          status: false,
-          message: "Please Provide valid Destination_Longitude",
-        });
+      return res.status(400).json({
+        status: false,
+        message: "Please Provide valid Destination_Longitude",
+      });
+    }
+
+    if (distLong < -180 || distLong > 180) {
+      return res.status(400).json({
+        status: false,
+        message: "Longitude should be between -180 and 180",
+      });
     }
 
     const { latitude, longitude } = req.user;
@@ -267,15 +285,86 @@ exports.getDistanceKm = async (req, res) => {
 
     // console.log("distance", distance);
 
-    return res
-      .status(200)
-      .json({
-        status_code: "200",
-        message: "Distance calculated sucessfully",
-        distance: `${distance.toFixed(3)}km`,
-      });
-
+    return res.status(200).json({
+      status_code: "200",
+      message: "Distance calculated sucessfully",
+      distance: `${distance.toFixed(3)}km`,
+    });
   } catch (err) {
     return res.status(500).json({ status: false, message: err.message });
+  }
+};
+
+/* 
+ This API will return users based on the day they registered.
+ Users must be grouped day-wise.
+*/
+
+exports.getUserListing = async (req, res) => {
+  try {
+    let { week_number } = req.query;
+
+    week_number = week_number.split(",");
+
+    week_number = week_number.map((n) => Number(n));
+
+    // console.log(typeof week_number)
+
+    // return res.json(week_number)
+
+    const mongoDays = week_number.map((d) => d + 1);
+
+    const users = await User.aggregate([
+      {
+        $project: {
+          name: 1,
+          email: 1,
+          dayOfWeek: { $dayOfWeek: "$createdAt" },
+        },
+      },
+      {
+        $match: {
+          dayOfWeek: { $in: mongoDays },
+        },
+      },
+      {
+        $group: {
+          _id: "$dayOfWeek",
+          users: {
+            $push: {
+              name: "$name",
+              email: "$email",
+            },
+          },
+        },
+      },
+    ]);
+
+    const dayMap = {
+      1: "sunday",
+      2: "monday",
+      3: "tuesday",
+      4: "wednesday",
+      5: "thursday",
+      6: "friday",
+      7: "saturday",
+    };
+
+    let data = {};
+
+    users.forEach((item) => {
+      data[dayMap[item._id]] = item.users;
+    });
+
+    return res.status(200).json({
+      status_code: 200,
+      message: "User listing fetched successfully",
+      data: data,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: error.message,
+    });
   }
 };
