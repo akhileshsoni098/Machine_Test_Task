@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const { getDistance } = require("../utils/getDistance");
 
 //===================== Register / Login User ======
+const validEmail = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{3}$/;
 
 exports.register = async (req, res) => {
   try {
@@ -39,6 +40,13 @@ exports.register = async (req, res) => {
         status: false,
         message: "Please provide a valid email",
       });
+    }
+
+
+    if (!validEmail.test(email)) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Kindly provide valid email" });
     }
 
     // check user Already registered
@@ -184,7 +192,7 @@ exports.register = async (req, res) => {
 
     return res.status(200).json({
       status_code: "200",
-      message: "User LogIn Successfully",
+      message: "User Registered Successfully",
       data: response,
     });
   } catch (err) {
@@ -306,13 +314,24 @@ exports.getUserListing = async (req, res) => {
 
     week_number = week_number.split(",");
 
-    week_number = week_number.map((n) => Number(n));
+    week_number = week_number.map((n) => {
+      Number(n);
+      if (n > 6 || n < 0) {
+        return res
+          .status(400)
+          .json({ status: false, message: `Invalid day of week is ${n}` });
+      } else {
+        return Number(n);
+      }
+    });
 
     // console.log(typeof week_number)
 
     // return res.json(week_number)
 
     const mongoDays = week_number.map((d) => d + 1);
+
+    // validation
 
     const users = await User.aggregate([
       {
